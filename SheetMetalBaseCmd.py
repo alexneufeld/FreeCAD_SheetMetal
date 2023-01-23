@@ -29,7 +29,7 @@ import os.path
 from PySide import QtCore
 from SheetMetalBaseSolid import smBase
 from SheetMetalBaseTask import SMBaseTaskPanel
-from SheetMetalCmd import iconPath
+from SheetMetalUtil import iconPath
 
 
 class SMBaseBend:
@@ -120,15 +120,15 @@ class SMBaseViewProvider:
             self.Object = doc.getObject(state["ObjectName"])
 
     def setEdit(self, vobj, mode):
-        taskd = SMBaseTaskPanel(vobj.Object, False)
-        Gui.Control.showDialog(taskd)
-        taskd.focusUiStart()
+        if mode == 0:
+            taskd = SMBaseTaskPanel(vobj.Object, False)
+            Gui.Control.showDialog(taskd)
+            taskd.focusUiStart()
         return True
 
     def unsetEdit(self, vobj, mode):
-        Gui.Control.closeDialog()
-        # self.Object.baseObject[0].ViewObject.Visibility=False
-        # self.Object.ViewObject.Visibility=True
+        if mode == 0:
+            Gui.Control.closeDialog()
         return False
 
     def claimChildren(self):

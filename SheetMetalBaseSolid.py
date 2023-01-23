@@ -34,22 +34,14 @@ def modifiedWire(WireList, radius, thk, length, normal, Side, sign):
     # Part.show(wire_extr,"wire_extr")
 
     if Side == "Inside":
-        wire_extr = wire_extr.makeOffsetShape(
-            thk / 2.0 * sign,
-            0.0,
-            fill=False,
-            join=2
-        )
+        wire_extr = wire_extr.makeOffsetShape(thk / 2.0 * sign, 0.0, fill=False, join=2)
     elif Side == "Outside":
         wire_extr = wire_extr.makeOffsetShape(
             -thk / 2.0 * sign, 0.0, fill=False, join=2
         )
     # Part.show(wire_extr,"wire_extr")
     try:
-        filleted_extr = wire_extr.makeFillet(
-            (radius + thk / 2.0),
-            wire_extr.Edges
-        )
+        filleted_extr = wire_extr.makeFillet((radius + thk / 2.0), wire_extr.Edges)
     except:
         filleted_extr = wire_extr
     # Part.show(filleted_extr,"filleted_extr")
@@ -83,10 +75,7 @@ def smBase(
     # print([mat, normal])
     if WireList.isClosed():
         # If Closed sketch is there, make a face & extrude it
-        sketch_face = Part.makeFace(
-            MainObject.Shape.Wires,
-            "Part::FaceMakerBullseye"
-        )
+        sketch_face = Part.makeFace(MainObject.Shape.Wires, "Part::FaceMakerBullseye")
         thk = -1.0 * thk if reverse else thk
         wallSolid = sketch_face.extrude(sketch_face.normalAt(0, 0) * thk)
         if midplane:
@@ -94,15 +83,7 @@ def smBase(
                 wallSolid.translated(sketch_face.normalAt(0, 0) * thk * -0.5)
             )
     else:
-        filleted_extr = modifiedWire(
-            WireList,
-            radius,
-            thk,
-            length,
-            normal,
-            Side,
-            1.0
-        )
+        filleted_extr = modifiedWire(WireList, radius, thk, length, normal, Side, 1.0)
         # Part.show(filleted_extr,"filleted_extr")
         dist = WireList.Vertexes[0].Point.distanceToPlane(
             FreeCAD.Vector(0, 0, 0), normal

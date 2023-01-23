@@ -29,34 +29,7 @@ import os.path
 from PySide import QtCore
 from PySide import QtGui
 from SheetMetalCmd import iconPath
-
-
-class selectionFilter(QtCore.QObject):
-    """A selectionObserver that only emits signals when geometry that is
-    part of baseFeature is selected. Allowable geometry can be restricted
-    to only faces/edges/vertices by setting geomType to
-    "Face", "Edge", or "Vertex"
-    """
-
-    selection = QtCore.Signal(str)
-
-    def __init__(self, baseFeature, geomType="Any"):
-        super().__init__()
-        self.baseFeature = baseFeature
-        if geomType not in ["Any", "Face", "Edge", "Vertex"]:
-            raise ValueError(f"invalid geometry restrictor: {geomType}")
-        self.geomType = geomType
-
-    def addSelection(self, doc, obj, sub, pnt):
-        print("p1")
-        print(obj)
-        print(self.baseFeature.Name)
-        if obj == self.baseFeature.Name:
-            print("p2")
-            print(sub)
-            if self.geomType == "Any" or sub.startswith(self.geomType):
-                print("p3")
-                self.selection.emit(sub)
+from SheetMetalUtil import selectionFilter
 
 
 class SMReliefTaskPanel:
@@ -230,19 +203,15 @@ class SMReliefTaskPanel:
         self.contextMenu.show()
 
     def removeReference(self):
-        print("removing reference")
         deletedRef = self.form.listWidgetReferences.takeItem(
             self.form.listWidgetReferences.currentIndex().row()
         ).text()
         newList = list(self.feature.baseObject[1])
-        print(deletedRef)
-        print(newList)
         newList.remove(deletedRef)
         self.feature.baseObject = (self.feature.baseObject[0], newList)
         self.updateUI()
 
     def addReference(self, text):
-        print("adding reference")
         if text not in self.feature.baseObject[1]:
             newList = list(self.feature.baseObject[1])
             newList.append(text)

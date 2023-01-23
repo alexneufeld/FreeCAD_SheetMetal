@@ -27,7 +27,7 @@ import FreeCADGui as Gui
 import FreeCAD
 import os.path
 from PySide import QtGui
-from SheetMetalCmd import iconPath
+from SheetMetalUtil import iconPath
 from SheetMetalBaseSolid import smBase
 
 
@@ -53,7 +53,7 @@ class SMBaseTaskPanel:
         self.oldState = oldState
         # import UI form from file
         d = os.path.realpath(__file__)
-        d = os.path.dirname(p)
+        d = os.path.dirname(d)
         uiPath = os.path.join(d, "UI/TaskBaseBendParameters.ui")
         loader = Gui.UiLoader()
         self.form = loader.load(uiPath)
@@ -74,22 +74,14 @@ class SMBaseTaskPanel:
         self.form.materialThickness.setProperty(
             "rawValue", self.feature.thickness.Value
         )
-        self.form.flangeLength.setProperty(
-            "rawValue", self.feature.length.Value
-        )
-        self.form.bendRadius.setProperty(
-            "rawValue", self.feature.radius.Value
-        )
+        self.form.flangeLength.setProperty("rawValue", self.feature.length.Value)
+        self.form.bendRadius.setProperty("rawValue", self.feature.radius.Value)
         # connect expression bindings
         Gui.ExpressionBinding(self.form.materialThickness).bind(
             self.feature, "thickness"
         )
-        Gui.ExpressionBinding(self.form.flangeLength).bind(
-            self.feature, "length"
-        )
-        Gui.ExpressionBinding(self.form.bendRadius).bind(
-            self.feature, "radius"
-        )
+        Gui.ExpressionBinding(self.form.flangeLength).bind(self.feature, "length")
+        Gui.ExpressionBinding(self.form.bendRadius).bind(self.feature, "radius")
         self.form.bendSide.setCurrentText(self.feature.BendSide)
         # connect signals and slots
         self.form.checkMidPlane.toggled.connect(self.checkMidPlane)
@@ -137,13 +129,9 @@ class SMBaseTaskPanel:
         self.form.bendParameters.setEnabled(not profileClosed)
         # set a text field to indicate whether the profile is closed
         if profileClosed:
-            self.form.labelBaseStatus.setText(
-                "Base object is a closed profile"
-            )
+            self.form.labelBaseStatus.setText("Base object is a closed profile")
         else:
-            self.form.labelBaseStatus.setText(
-                "Base object is an open profile"
-            )
+            self.form.labelBaseStatus.setText("Base object is an open profile")
         # recompute the features geometry if 'Update view' is checked
         if self.form.checkUpdateView.isChecked():
             error = False

@@ -23,7 +23,8 @@
 #
 ###############################################################################
 
-from PySide import QtCore, QtGui
+from PySide import QtCore
+from PySide import QtGui
 import os
 
 __dir__ = os.path.dirname(__file__)
@@ -66,3 +67,31 @@ def smIsOperationLegal(body, selobj):
         )
         return False
     return True
+
+
+class selectionFilter(QtCore.QObject):
+    """A selectionObserver that only emits signals when geometry that is
+    part of baseFeature is selected. Allowable geometry can be restricted
+    to only faces/edges/vertices by setting geomType to
+    "Face", "Edge", or "Vertex"
+    """
+
+    selection = QtCore.Signal(str)
+
+    def __init__(self, baseFeature, geomType="Any"):
+        super().__init__()
+        self.baseFeature = baseFeature
+        if geomType not in ["Any", "Face", "Edge", "Vertex"]:
+            raise ValueError(f"invalid geometry restrictor: {geomType}")
+        self.geomType = geomType
+
+    def addSelection(self, doc, obj, sub, pnt):
+        print("p1")
+        print(obj)
+        print(self.baseFeature.Name)
+        if obj == self.baseFeature.Name:
+            print("p2")
+            print(sub)
+            if self.geomType == "Any" or sub.startswith(self.geomType):
+                print("p3")
+                self.selection.emit(sub)
