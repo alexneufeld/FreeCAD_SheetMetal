@@ -34,6 +34,8 @@ import SheetMetalUnfolder
 from SheetMetalTools import SMLogger, UnfoldException
 from engineering_mode import engineering_mode_enabled
 
+from freecad.sheetmetal_unfolder import unfold, gui_unfold
+
 translate = FreeCAD.Qt.translate
 
 # IMPORTANT: please remember to change the element map version in case of any
