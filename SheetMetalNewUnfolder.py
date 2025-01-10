@@ -655,8 +655,12 @@ class Edge2DCleanup:
     replace bezier curves and other geometry types with lines and arcs"""
 
     @staticmethod
-    def bspline_to_single_arc(curve: Part.Edge) -> tuple[Part.Edge, float]:
-        line = Part.makeLine(curve.firstVertex().Point, curve.lastVertex().Point)
+    def bspline_to_line(curve: Part.Edge) -> tuple[Part.Edge, float]:
+        p1 = curve.firstVertex().Point
+        p2 = curve.lastVertex().Point
+        if p1.distanceToPoint(p2) < eps:
+            return Part.Edge(), float("inf")
+        line = Part.makeLine(p1, p2)
         max_err = Edge2DCleanup.check_err(curve, line)
         return line, max_err
 
@@ -679,13 +683,25 @@ class Edge2DCleanup:
         return max_err
 
     @staticmethod
-    def bspline_to_line(curve: Part.Edge) -> tuple[Part.Edge, float]:
+    def bspline_to_arc(curve: Part.Edge) -> tuple[Part.Edge, float]:
         point1 = curve.firstVertex().Point
-        point3 = curve.lastVertex().Point
         point2 = curve.valueAt(
             curve.FirstParameter + 0.5 * (curve.LastParameter - curve.FirstParameter)
         )
-        arc = Part.Arc(point1, point2, point3).toShape().Edges[0]
+        point3 = curve.lastVertex().Point
+        if point1.distanceToPoint(point3) < eps:
+            # full circle
+            point4 = curve.valueAt(
+                curve.FirstParameter
+                + 0.25 * (curve.LastParameter - curve.FirstParameter)
+            )
+            radius = point1.distanceToPoint(point2) / 2
+            center = point1 + 0.5 * (point2 - point1)
+            axis = (point1 - center).cross(point4 - center)
+            arc = Part.makeCircle(radius, center, axis)
+        else:
+            # partial circle
+            arc = Part.Arc(point1, point2, point3).toShape().Edges[0]
         max_err = Edge2DCleanup.check_err(curve, arc)
         return arc, max_err
 
@@ -693,24 +709,25 @@ class Edge2DCleanup:
     def cleanup_sketch(sketch: list[Part.Edge], tolerance: float) -> list[Part.Edge]:
         new_edge_list = []
         for edge in sketch:
-            if isinstance(edge.Curve, (Part.Line, Part.Arc)):
-                new_edge_list.append(edge)
-            else:
-                if isinstance(edge.Curve, Part.BSplineCurve):
-                    bspline = edge
-                else:
-                    bspline = edge.toNurbs().Edges[0]
-                line, max_err = Edge2DCleanup.bspline_to_line(bspline)
-                if max_err < tolerance:
-                    new_edge_list.append(line)
-                    continue
-                arc, max_err = Edge2DCleanup.bspline_to_single_arc(bspline)
-                if max_err < tolerance:
-                    new_edge_list.append(line)
-                    continue
-                new_edge_list.extend(
-                    a.toShape().Edges[0] for a in bspline.Curve.toBiArcs(tolerance)
-                )
+            match edge.Curve.TypeId:
+                case "Part::GeomLine" | "Part::GeomCircle":
+                    new_edge_list.append(edge)
+                case _:
+                    if isinstance(edge.Curve, Part.BSplineCurve):
+                        bspline = edge
+                    else:
+                        bspline = edge.toNurbs().Edges[0]
+                    new_edge, max_err = Edge2DCleanup.bspline_to_line(bspline)
+                    if max_err < tolerance:
+                        new_edge_list.append(new_edge)
+                        continue
+                    new_edge, max_err = Edge2DCleanup.bspline_to_arc(bspline)
+                    if max_err < tolerance:
+                        new_edge_list.append(new_edge)
+                        continue
+                    new_edge_list.extend(
+                        a.toShape().Edges[0] for a in bspline.Curve.toBiArcs(tolerance)
+                    )
         return new_edge_list
 
 
