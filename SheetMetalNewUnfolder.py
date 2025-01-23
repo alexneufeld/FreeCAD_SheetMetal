@@ -512,7 +512,8 @@ class SketchExtraction:
             endpoint = edge.lastVertex().Point
             curvetype = edge.Curve.TypeId
             if curvetype == "Part::GeomLine":
-                sketch.addGeometry(Part.LineSegment(startpoint, endpoint))
+                if startpoint.distanceToPoint(endpoint) > eps:
+                    sketch.addGeometry(Part.LineSegment(startpoint, endpoint))
             elif curvetype == "Part::GeomCircle":
                 if startpoint.distanceToPoint(endpoint) < eps:
                     # full circle
