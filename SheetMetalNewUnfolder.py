@@ -950,11 +950,18 @@ class Edge2DCleanup:
         return fixed_wire_list
 
     @staticmethod
+    def remove_non_closed_wires(wirelist: list[Part.Wire]) -> list[Part.Wire]:
+        return [w for w in wirelist if w.isClosed()]
+
+    @staticmethod
     def clean_and_structure_geometry(edges: list[Part.Edge]) -> list[Part.Wire]:
         """Run all available clean up passes"""
         intermediate_result1 = Edge2DCleanup.eliminate_bsplines(edges, spline2arc_tol)
         intermediate_result2 = Edge2DCleanup.fix_coincidence(intermediate_result1, fuzz)
-        result = Edge2DCleanup.merge_segmented_circles(intermediate_result2)
+        intermediate_result3 = Edge2DCleanup.merge_segmented_circles(
+            intermediate_result2
+        )
+        result = Edge2DCleanup.remove_non_closed_wires(intermediate_result3)
         return result
 
 
