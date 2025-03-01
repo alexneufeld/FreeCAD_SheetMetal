@@ -28,6 +28,7 @@ from itertools import combinations
 from math import degrees, log10, pi, radians, sin, tan
 from operator import mul as multiply_operator
 from statistics import StatisticsError, mode
+from dataclasses import dataclass
 
 import FreeCAD
 import Part
@@ -631,27 +632,25 @@ class SketchExtraction:
         return overall_transform
 
 
+@dataclass(frozen=True)
 class BendAllowanceCalculator:
-    def __init__(self) -> None:
-        self.k_factor_standard = None
-        self.radius_thickness_values = None
-        self.k_factor_values = None
+    k_factor_standard: "KFactorStandard"
+    radius_thickness_values: tuple[float]
+    k_factor_values: tuple[float]
 
     @classmethod
     def from_single_value(cls, k_factor: float, kfactor_standard: str):
         """one k-factor for all radius:thickness ratios"""
-        instance = cls()
-        instance.k_factor_standard = (
+        this_k_factor_standard = (
             cls.KFactorStandard.ANSI
             if kfactor_standard == "ansi"
             else cls.KFactorStandard.DIN
         )
-        instance.radius_thickness_values = [
-            1.0,
-        ]
-        instance.k_factor_values = [
-            k_factor,
-        ]
+        this_radius_thickness_values = (1.0,)
+        this_k_factor_values = (k_factor,)
+        instance = cls(
+            this_k_factor_standard, this_radius_thickness_values, this_k_factor_values
+        )
         return instance
 
     def get_k_factor(self, radius: float, thickness: float) -> float:
@@ -697,7 +696,6 @@ class BendAllowanceCalculator:
 
     @classmethod
     def from_spreadsheet(cls, sheet: FreeCAD.DocumentObject):
-        instance = cls()
         r_t_header = sheet.getContents("A1")
         r_t_header = "".join(c for c in r_t_header if c not in "' ").lower()
         if r_t_header != "radius/thickness":
@@ -709,9 +707,9 @@ class BendAllowanceCalculator:
         kf_header = sheet.getContents("B1")
         kf_header = "".join(c for c in kf_header if c not in "' -()").lower()
         if kf_header == "kfactoransi":
-            instance.k_factor_standard = cls.KFactorStandard.ANSI
+            this_k_factor_standard = cls.KFactorStandard.ANSI
         elif kf_header == "kfactordin":
-            instance.k_factor_standard = cls.KFactorStandard.DIN
+            this_k_factor_standard = cls.KFactorStandard.DIN
         else:
             errmsg = (
                 "Cell B1 of material definition sheet must be "
@@ -732,12 +730,15 @@ class BendAllowanceCalculator:
             if not next_kf_value:
                 errmsg = (
                     "material definition sheet has an empty "
-                    f"cell in the K-factors column (cell B{i+2})"
+                    f"cell in the K-factors column (cell B{i + 2})"
                 )
                 raise ValueError(errmsg)
             k_factor_list.append(float(next_kf_value))
-        instance.radius_thickness_values = radius_thickness_list
-        instance.k_factor_values = k_factor_list
+        this_radius_thickness_values = tuple(radius_thickness_list)
+        this_k_factor_values = tuple(k_factor_list)
+        instance = cls(
+            this_k_factor_standard, this_radius_thickness_values, this_k_factor_values
+        )
         return instance
 
     def _convert_to_ansi_kfactor(self, k_factor: float) -> float:
@@ -1279,7 +1280,7 @@ def unfold(
             ]
         except Exception as E:
             msg = (
-                f"failed to unroll a cylindrical face (Face{e[1]+1})"
+                f"failed to unroll a cylindrical face (Face{e[1] + 1})"
                 + "\n"
                 + f"Original exception: {E}\n"
             )
