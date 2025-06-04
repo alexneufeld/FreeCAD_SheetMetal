@@ -76,6 +76,21 @@ spline2arc_tol = 0.1  # one tenth of one millimeter
 discretization_quantity = 10
 
 
+class PrecheckGeometry:
+    @staticmethod
+    def find_0_length_edges(shp: Part.Shape) -> None:
+        if not all([e.Length > eps for e in shp.Edges]):
+            msg = (
+                "Shape has at least one 0-length edge. "
+                "This may cause errors during unfolding\n"
+            )
+            FreeCAD.Console.PrintWarning(msg)
+
+    @staticmethod
+    def run_all_checks(shp: Part.Shape) -> None:
+        PrecheckGeometry.find_0_length_edges(shp)
+
+
 class EstimateThickness:
     """This class provides helper functions to determine the sheet thickness
     of a solid-modelled sheet metal part."""
@@ -1241,6 +1256,7 @@ def unfold(
     """Given a solid body of a sheet metal part and a reference face, computes
     a solid representation of the unbent object, as well as a compound object
     containing straight edges for each bend centerline."""
+    PrecheckGeometry.run_all_checks(shape)
     graph_of_sheet_faces = build_graph_of_tangent_faces(shape, root_face_index)
     thickness = EstimateThickness.using_best_method(shape, root_face_index)
     # also build a list of all seam edges, to be filtered out from the unfolded shape
