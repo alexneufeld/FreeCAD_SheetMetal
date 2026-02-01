@@ -105,6 +105,7 @@ def smUnfoldExportSketches(obj, useDialog=True):
         if sketch is None:
             return
         sketches.append(sketch)
+        print(f"{sketches=}")
     exptype = obj.Proxy.ExportType
     filename = f"{FreeCAD.ActiveDocument.FileName[0:-6]}-{obj.Name}.{exptype}"
     SheetMetalTools.smGuiExportSketch(sketches, exptype, filename, useDialog)
